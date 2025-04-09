@@ -7,9 +7,11 @@ export const handleClassAssignmentEvent: SQSHandler = async (
 ): Promise<void> => {
   for (const record of event.Records) {
     const body = JSON.parse(record.body);
+    const { Keys, NewImage, OldImage } = body.dynamodb;
     console.log('@handleClassAssignmentEvent * record:', record);
     console.log('@handleClassAssignmentEvent * body:', body);
-    console.log('@handleClassAssignmentEvent * marshalled NewImage:', unmarshall(body.NewImage ?? {}));
-    console.log('@handleClassAssignmentEvent * marshalled OldImage:', unmarshall(body.OldImage ?? {}));
+    console.log('@handleClassAssignmentEvent * unmarshalled Keys:', unmarshall(Keys) ?? {});
+    console.log('@handleClassAssignmentEvent * unmarshalled NewImage:', unmarshall(NewImage ?? {}));
+    console.log('@handleClassAssignmentEvent * unmarshalled OldImage:', unmarshall(OldImage ?? {}));
   }
 };
