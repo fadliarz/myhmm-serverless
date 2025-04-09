@@ -25,10 +25,10 @@ jobs:
         run: npx tsc
 
       - name: Bundle lambda code (class-assignment)
-        run: "npx esbuild dist/event-handlers/class-assignment/handleClassAssignmentEvent.js --bundle --platform=node --outfile=dist/event-handlers/class-assignment/handleClassAssignmentEventBundle.js"
+        run: "npx esbuild dist/event-handlers/class-assignment/handleClassAssignmentEvent.js --bundle --platform=node --outfile=handleClassAssignmentEventBundle.js"
 
       - name: Zip lambda code (class-assignment)
-        run: zip -r handleClassAssignmentEvent.zip dist/event-handlers/class-assignment/handleClassAssignmentEventBundle.js node_modules/
+        run: zip -r handleClassAssignmentEvent.zip handleClassAssignmentEventBundle.js
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v2
