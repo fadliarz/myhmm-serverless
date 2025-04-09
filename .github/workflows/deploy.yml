@@ -24,8 +24,11 @@ jobs:
       - name: Build code
         run: npx tsc
 
-      - name: Zip lambda code
-        run: zip -r lambda-code.zip dist/ node_modules/
+      - name: Bundle lambda code (class-assignment)
+        run: "esbuild dist/event-handlers/class-assignment/handleClassAssignmentEvent.js --bundle --platform=node --outfile=dist/event-handlers/class-assignment/handleClassAssignmentEventBundle.js"
+
+      - name: Zip lambda code (class-assignment)
+        run: zip -r handleClassAssignmentEvent.zip dist/event-handlers/class-assignment/handleClassAssignmentEventBundle.js node_modules/
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v2
@@ -34,6 +37,6 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ap-southeast-3
 
-      - name: Upload to S3
+      - name: Upload to S3 (class-assignment)
         run: |
           aws s3 cp lambda-code.zip s3://${{ secrets.AWS_S3_LAMBDA_ARTIFACTS_BUCKET_NAME }}/lambda/handleClassAssignmentEvent.zip
