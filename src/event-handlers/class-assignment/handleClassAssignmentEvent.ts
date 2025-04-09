@@ -9,7 +9,7 @@ export const handleClassAssignmentEvent: SQSHandler = async (
     const body = JSON.parse(record.body);
     console.log('@handleClassAssignmentEvent * record:', record);
     console.log('@handleClassAssignmentEvent * body:', body);
-    console.log('@handleClassAssignmentEvent * marshalled NewImage:', unmarshall(body.NewImage));
-    console.log('@handleClassAssignmentEvent * marshalled OldImage:', unmarshall(body.OldImage));
+    console.log('@handleClassAssignmentEvent * marshalled NewImage:', unmarshall(body.NewImage ?? {}));
+    console.log('@handleClassAssignmentEvent * marshalled OldImage:', unmarshall(body.OldImage ?? {}));
   }
 };
