@@ -2,6 +2,8 @@ import 'dotenv/config';
 import { Context, SQSEvent, SQSHandler } from 'aws-lambda';
 import { unmarshall } from '@aws-sdk/util-dynamodb';
 import { cleanEnv, str } from 'envalid';
+import { EventName } from '../../common/EventName';
+import ClassAssignmentCreatedEventHandler from './on-create/ClassAssignmentCreatedEventHandler';
 
 export const handleClassAssignmentEvent: SQSHandler = async (
   event: SQSEvent,
@@ -29,5 +31,14 @@ export const handleClassAssignmentEvent: SQSHandler = async (
     console.log('@handleClassAssignmentEvent * unmarshalled Keys:', unmarshall(Keys) ?? {});
     console.log('@handleClassAssignmentEvent * unmarshalled NewImage:', unmarshall(NewImage ?? {}));
     console.log('@handleClassAssignmentEvent * unmarshalled OldImage:', unmarshall(OldImage ?? {}));
+
+    if (eventName === EventName.INSERT) {
+      const classAssignmentCreatedEventHandler: ClassAssignmentCreatedEventHandler = new ClassAssignmentCreatedEventHandler();
+      classAssignmentCreatedEventHandler.handle();
+    } else if (eventName === EventName.REMOVE) {
+
+    } else {
+      throw new Error('@handleClassAssignmentEvent * eventName is not supported');
+    }
   }
 };
