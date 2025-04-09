@@ -29,6 +29,7 @@ export default class ClassAssignmentCreatedEventHandler {
       const MAX_RETRIES: number = 3;
       while (RETRIES <= MAX_RETRIES) {
         try {
+          console.info('@@ClassAssignmentCreatedEventHandler.handle * NewImage:', NewImage);
           const { Items } = await this.dynamoDBDocumentClient.send(new QueryCommand({
             TableName: env.ENROLLMENT_TABLE,
             IndexName: 'classId_userId',
