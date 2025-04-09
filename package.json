@@ -19,6 +19,8 @@
     "@aws-sdk/lib-dynamodb": "^3.782.0",
     "@aws-sdk/util-dynamodb": "^3.782.0",
     "@types/aws-lambda": "^8.10.148",
-    "aws-lambda": "^1.0.7"
+    "aws-lambda": "^1.0.7",
+    "dotenv": "^16.4.7",
+    "envalid": "^8.0.0"
   }
 }
