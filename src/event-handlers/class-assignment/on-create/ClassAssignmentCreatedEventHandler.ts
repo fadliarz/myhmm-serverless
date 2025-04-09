@@ -57,7 +57,7 @@ export default class ClassAssignmentCreatedEventHandler {
           }
           RETRIES++;
           if (RETRIES > MAX_RETRIES) {
-            throw new MaxRetriesException(exception);
+            throw new MaxRetriesException(exception as Error);
           }
           await TimerService.sleepWith1000MsBaseDelayExponentialBackoff(RETRIES);
         }
