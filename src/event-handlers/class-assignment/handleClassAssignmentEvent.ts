@@ -1,6 +1,5 @@
 import 'dotenv/config';
 import { Context, SQSEvent, SQSHandler } from 'aws-lambda';
-import { unmarshall } from '@aws-sdk/util-dynamodb';
 import { cleanEnv, str } from 'envalid';
 import { EventName } from '../../common/EventName';
 import ClassAssignmentCreatedEventHandler from './on-create/ClassAssignmentCreatedEventHandler';
@@ -25,13 +24,6 @@ export const handleClassAssignmentEvent: SQSHandler = async (
     const body = JSON.parse(record.body);
     const { eventName, dynamodb } = body;
     const { Keys, NewImage, OldImage } = dynamodb;
-    console.log('@handleClassAssignmentEvent * record:', record);
-    console.log('@handleClassAssignmentEvent * eventName:', eventName);
-    console.log('@handleClassAssignmentEvent * body:', body);
-    console.log('@handleClassAssignmentEvent * unmarshalled Keys:', unmarshall(Keys) ?? {});
-    console.log('@handleClassAssignmentEvent * unmarshalled NewImage:', unmarshall(NewImage ?? {}));
-    console.log('@handleClassAssignmentEvent * unmarshalled OldImage:', unmarshall(OldImage ?? {}));
-
     if (eventName === EventName.INSERT) {
       const classAssignmentCreatedEventHandler: ClassAssignmentCreatedEventHandler = new ClassAssignmentCreatedEventHandler();
       classAssignmentCreatedEventHandler.handle();
