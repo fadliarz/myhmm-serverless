@@ -4,9 +4,7 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "tsc",
-    "bundle-class-assignment": "esbuild dist/event-handlers/class-assignment/handleClassAssignmentEvent.js --bundle --platform=node --outfile=dist/event-handlers/class-assignment/handleClassAssignmentEventBundle.js",
-    "upload-class-assignment": "aws s3 cp lambda/handleClassAssignmentEvent.zip s3://myhmm-serverless-bucket/handleClassAssignmentEvent.zip"
+    "build": "tsc"
   },
   "keywords": [],
   "author": "",
