@@ -3,6 +3,7 @@ import { Context, SQSEvent, SQSHandler } from 'aws-lambda';
 import { cleanEnv, str } from 'envalid';
 import { EventName } from '../../common/EventName';
 import ClassAssignmentCreatedEventHandler from './on-create/ClassAssignmentCreatedEventHandler';
+import ClassAssignmentDeletedEventHandler from './on-delete/ClassAssignmentDeletedEventHandler';
 
 export const handleClassAssignmentEvent: SQSHandler = async (
   event: SQSEvent,
@@ -26,9 +27,10 @@ export const handleClassAssignmentEvent: SQSHandler = async (
     const { Keys, NewImage, OldImage } = dynamodb;
     if (eventName === EventName.INSERT) {
       const classAssignmentCreatedEventHandler: ClassAssignmentCreatedEventHandler = new ClassAssignmentCreatedEventHandler();
-      classAssignmentCreatedEventHandler.handle();
+      await classAssignmentCreatedEventHandler.handle({ NewImage, env });
     } else if (eventName === EventName.REMOVE) {
-
+      const classAssignmentDeletedEventHandler: ClassAssignmentDeletedEventHandler = new ClassAssignmentDeletedEventHandler();
+      await classAssignmentDeletedEventHandler.handle();
     } else {
       throw new Error('@handleClassAssignmentEvent * eventName is not supported');
     }
