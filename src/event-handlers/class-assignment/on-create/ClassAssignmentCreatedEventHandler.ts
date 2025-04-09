@@ -31,6 +31,7 @@ export default class ClassAssignmentCreatedEventHandler {
         try {
           const { Items } = await this.dynamoDBDocumentClient.send(new QueryCommand({
             TableName: env.ENROLLMENT_TABLE,
+            IndexName: 'classId_userId',
             KeyConditionExpression: '#classId = :value0',
             ExpressionAttributeNames: {
               '#classId': 'classId',
