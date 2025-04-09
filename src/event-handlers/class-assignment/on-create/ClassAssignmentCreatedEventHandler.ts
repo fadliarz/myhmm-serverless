@@ -48,6 +48,7 @@ export default class ClassAssignmentCreatedEventHandler {
               countSuccess++;
             }
           }
+          break;
         } catch (exception) {
           console.error('@ClassAssignmentCreatedEventHandler.handle * failed to process item * exception:', exception);
           if (exception instanceof MaxRetriesException) {
