@@ -11,6 +11,7 @@
   "license": "ISC",
   "description": "",
   "devDependencies": {
+    "@types/node": "^22.14.0",
     "esbuild": "^0.25.2",
     "typescript": "^5.8.3"
   },
