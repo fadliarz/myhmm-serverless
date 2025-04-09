@@ -1,5 +1,6 @@
 export default class MaxRetriesException extends Error {
-  constructor() {
+  constructor(throwable?: Error) {
+    console.error('MaxRetriesException * throwable:', throwable);
     super('Max retries exceeded');
   }
 }

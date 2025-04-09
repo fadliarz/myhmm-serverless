@@ -50,15 +50,14 @@ export default class ClassAssignmentCreatedEventHandler {
           }
           break;
         } catch (exception) {
-          console.error('@ClassAssignmentCreatedEventHandler.handle * failed to process item * exception:', exception);
           if (exception instanceof MaxRetriesException) {
             console.error('@ClassAssignmentCreatedEventHandler * failed to process item * exception:', exception);
             console.error('@ClassAssignmentCreatedEventHandler * failed to process item * success count:', countSuccess);
-            throw exception;
+            throw new MaxRetriesException(exception);
           }
           RETRIES++;
           if (RETRIES > MAX_RETRIES) {
-            throw new MaxRetriesException();
+            throw new MaxRetriesException(exception);
           }
           await TimerService.sleepWith1000MsBaseDelayExponentialBackoff(RETRIES);
         }
@@ -96,11 +95,10 @@ export default class ClassAssignmentCreatedEventHandler {
         }));
         return;
       } catch (exception) {
-        console.error('@ClassAssignmentCreatedEventHandler.processItem * failed to process item * exception:', exception);
         if (exception instanceof ConditionalCheckFailedException) return;
         RETRIES++;
         if (RETRIES > MAX_RETRIES) {
-          throw new MaxRetriesException();
+          throw new MaxRetriesException(exception as Error);
         }
         await TimerService.sleepWith1000MsBaseDelayExponentialBackoff(RETRIES);
       }
