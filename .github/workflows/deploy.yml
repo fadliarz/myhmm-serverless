@@ -21,8 +21,10 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Build Lambda code
+      - name: Build code
         run: npx tsc
+
+      - name: Zip lambda code
         run: zip -r lambda-code.zip dist/ node_modules/
 
       - name: Configure AWS Credentials
@@ -34,4 +36,4 @@ jobs:
 
       - name: Upload to S3
         run: |
-          aws s3 cp lambda-code.zip s3://${{ secrets.AWS_S3_BUCKET_NAME }}/lambda/handleClassAssignmentEvent.zip
+          aws s3 cp lambda-code.zip s3://${{ secrets.AWS_S3_LAMBDA_ARTIFACTS_BUCKET_NAME }}/lambda/handleClassAssignmentEvent.zip
