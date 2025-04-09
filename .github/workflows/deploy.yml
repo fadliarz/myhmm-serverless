@@ -39,4 +39,4 @@ jobs:
 
       - name: Upload to S3 (class-assignment)
         run: |
-          aws s3 cp lambda-code.zip s3://${{ secrets.AWS_S3_LAMBDA_ARTIFACTS_BUCKET_NAME }}/lambda/handleClassAssignmentEvent.zip
+          aws s3 cp handleClassAssignmentEvent.zip s3://${{ secrets.AWS_S3_LAMBDA_ARTIFACTS_BUCKET_NAME }}/lambda/handleClassAssignmentEvent.zip
