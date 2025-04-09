@@ -47,6 +47,7 @@ export default class ClassAssignmentCreatedEventHandler {
             }
           }
         } catch (exception) {
+          console.error('@ClassAssignmentCreatedEventHandler.handle * failed to process item * exception:', exception);
           if (exception instanceof MaxRetriesException) {
             console.error('@ClassAssignmentCreatedEventHandler * failed to process item * exception:', exception);
             console.error('@ClassAssignmentCreatedEventHandler * failed to process item * success count:', countSuccess);
@@ -92,6 +93,7 @@ export default class ClassAssignmentCreatedEventHandler {
         }));
         return;
       } catch (exception) {
+        console.error('@ClassAssignmentCreatedEventHandler.processItem * failed to process item * exception:', exception);
         if (exception instanceof ConditionalCheckFailedException) return;
         RETRIES++;
         if (RETRIES > MAX_RETRIES) {
