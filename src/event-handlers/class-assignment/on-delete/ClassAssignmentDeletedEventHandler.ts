@@ -16,8 +16,8 @@ export default class ClassAssignmentDeletedEventHandler {
     do {
       const { Items } = await this.dynamoDBDocumentClient.send(
         new QueryCommand({
-          IndexName: 'classId_userId',
           TableName: env.ENROLLMENT_TABLE,
+          IndexName: 'classId_userId',
           KeyConditionExpression: '#classId = :value0',
           ExpressionAttributeNames: {
             '#classId': 'classId',
