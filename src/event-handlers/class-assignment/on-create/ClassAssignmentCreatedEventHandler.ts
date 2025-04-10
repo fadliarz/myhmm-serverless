@@ -25,41 +25,22 @@ export default class ClassAssignmentCreatedEventHandler {
     let countSuccess: number = 0;
     let lastEvaluatedKey: Record<string, any> | undefined = undefined;
     do {
-      let RETRIES: number = 0;
-      const MAX_RETRIES: number = 3;
-      while (RETRIES <= MAX_RETRIES) {
-        try {
-          console.info('@ClassAssignmentCreatedEventHandler.handle * NewImage:', NewImage);
-          const { Items } = await this.dynamoDBDocumentClient.send(new QueryCommand({
-            TableName: env.ENROLLMENT_TABLE,
-            IndexName: 'classId_userId',
-            KeyConditionExpression: '#classId = :value0',
-            ExpressionAttributeNames: {
-              '#classId': 'classId',
-            },
-            ExpressionAttributeValues: {
-              ':value0': NewImage.classId,
-            },
-            ExclusiveStartKey: lastEvaluatedKey,
-          }));
-          if (Items) {
-            for (const Item of Items) {
-              await this.processItem({ ...param, Item });
-              countSuccess++;
-            }
-          }
-          break;
-        } catch (exception) {
-          if (exception instanceof MaxRetriesException) {
-            console.error('@ClassAssignmentCreatedEventHandler * failed to process item * exception:', exception);
-            console.error('@ClassAssignmentCreatedEventHandler * failed to process item * success count:', countSuccess);
-            throw new MaxRetriesException(exception);
-          }
-          RETRIES++;
-          if (RETRIES > MAX_RETRIES) {
-            throw new MaxRetriesException(exception as Error);
-          }
-          await TimerService.sleepWith1000MsBaseDelayExponentialBackoff(RETRIES);
+      const { Items } = await this.dynamoDBDocumentClient.send(new QueryCommand({
+        TableName: env.ENROLLMENT_TABLE,
+        IndexName: 'classId_userId',
+        KeyConditionExpression: '#classId = :value0',
+        ExpressionAttributeNames: {
+          '#classId': 'classId',
+        },
+        ExpressionAttributeValues: {
+          ':value0': NewImage.classId,
+        },
+        ExclusiveStartKey: lastEvaluatedKey,
+      }));
+      if (Items) {
+        for (const Item of Items) {
+          await this.processItem({ ...param, Item });
+          countSuccess++;
         }
       }
     } while (lastEvaluatedKey);

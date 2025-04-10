@@ -25,13 +25,13 @@ export const handleClassAssignmentEvent: SQSHandler = async (
   for (const record of event.Records) {
     const body = JSON.parse(record.body);
     const { eventName, dynamodb } = body;
-    const { Keys, NewImage, OldImage } = dynamodb;
+    const { NewImage, OldImage } = dynamodb;
     if (eventName === EventName.INSERT) {
       const classAssignmentCreatedEventHandler: ClassAssignmentCreatedEventHandler = new ClassAssignmentCreatedEventHandler();
       await classAssignmentCreatedEventHandler.handle({ NewImage: unmarshall(NewImage) as any, env });
     } else if (eventName === EventName.REMOVE) {
       const classAssignmentDeletedEventHandler: ClassAssignmentDeletedEventHandler = new ClassAssignmentDeletedEventHandler();
-      await classAssignmentDeletedEventHandler.handle();
+      await classAssignmentDeletedEventHandler.handle({ OldImage: unmarshall(OldImage) as any, env });
     } else {
       throw new Error('@handleClassAssignmentEvent * eventName is not supported');
     }
