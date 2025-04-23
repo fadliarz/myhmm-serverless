@@ -30,6 +30,12 @@ jobs:
       - name: Zip lambda code (class-assignment)
         run: zip -r handleClassAssignmentEvent.zip handleClassAssignmentEvent.js
 
+      - name: Bundle lambda code (enrollment)
+        run: "npx esbuild dist/event-handlers/enrollment/handleEnrollmentEvent.js --bundle --platform=node --outfile=handleEnrollmentEvent.js"
+
+      - name: Zip lambda code (enrollment)
+        run: zip -r handleEnrollmentEvent.zip handleEnrollmentEvent.js
+
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
