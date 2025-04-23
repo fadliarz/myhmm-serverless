@@ -11,7 +11,4 @@ export default class ClassAssignmentEntity {
   public taskType!: AssignmentTaskType;
   public createdAt!: string;
   public updatedAt!: string;
-
-  constructor() {
-  }
 }
