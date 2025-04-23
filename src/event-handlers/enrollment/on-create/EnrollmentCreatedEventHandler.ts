@@ -19,7 +19,7 @@ export default class EnrollmentCreatedEventHandler extends EnrollmentEventHandle
     let createdAssignmentCount: number = 0;
     let lastEvaluatedKey: Record<string, any> | undefined = undefined;
     do {
-      const { Items } = await this.dynamoDBDocumentClient.send(new QueryCommand({
+      const { Items: classAssignmentEntities } = await this.dynamoDBDocumentClient.send(new QueryCommand({
         TableName: env.CLASS_ASSIGNMENT_TABLE,
         KeyConditionExpression: '#classId = :value0',
         ExpressionAttributeNames: {
@@ -30,8 +30,8 @@ export default class EnrollmentCreatedEventHandler extends EnrollmentEventHandle
         },
         ExclusiveStartKey: lastEvaluatedKey,
       }));
-      if (Items) {
-        for (const classAssignmentEntity of Items as ClassAssignmentEntity[]) {
+      if (classAssignmentEntities) {
+        for (const classAssignmentEntity of classAssignmentEntities as ClassAssignmentEntity[]) {
           const userAssignmentEntity: UserAssignmentEntity = new UserAssignmentEntity();
           userAssignmentEntity.userId = enrollmentEntity.userId;
           userAssignmentEntity.assignmentId = classAssignmentEntity.assignmentId;
