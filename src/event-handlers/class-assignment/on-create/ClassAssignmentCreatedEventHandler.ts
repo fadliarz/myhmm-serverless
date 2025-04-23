@@ -1,6 +1,6 @@
 import { DynamoDBDocumentClient, PutCommand, QueryCommand } from '@aws-sdk/lib-dynamodb';
 import generateDynamoDBDocumentClient from '../../../common/generateDynamoDBDocumentClient';
-import { AssignmentTaskType } from '../entity/AssignmentTaskType';
+import { AssignmentTaskType } from '../../../common/entity/AssignmentTaskType';
 import { AssignmentType } from '../../../common/AssignmentType';
 import { CompletionStatus } from '../../../common/CompletionStatus';
 import { ConditionalCheckFailedException } from '@aws-sdk/client-dynamodb';
@@ -8,7 +8,6 @@ import TimerService from '../../../common/TimerService';
 import MaxRetriesException from '../../../common/MaxRetriesException';
 
 export default class ClassAssignmentCreatedEventHandler {
-
   private readonly dynamoDBDocumentClient: DynamoDBDocumentClient = generateDynamoDBDocumentClient();
 
   public async handle(param: {
