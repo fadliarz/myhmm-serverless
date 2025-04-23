@@ -13,10 +13,13 @@ export default class EnrollmentDeletedEventHandler extends EnrollmentEventHandle
   public async handle(enrollmentDeletedEvent: EnrollmentDeletedEvent) {
     const env = await this.getEnv();
     const deletedEnrollmentEntity: EnrollmentEntity = enrollmentDeletedEvent.data.OldImage;
-    let countSuccess: number = 0;
+    let deletedAssignmentCount: number = 0;
     let lastEvaluatedKey: Record<string, any> | undefined = undefined;
     do {
-      const { Items } = await this.dynamoDBDocumentClient.send(new QueryCommand({
+      const {
+        Items: classAssignmentEntities,
+        LastEvaluatedKey,
+      } = await this.dynamoDBDocumentClient.send(new QueryCommand({
         TableName: env.CLASS_ASSIGNMENT_TABLE,
         KeyConditionExpression: '#classId = :value0',
         ExpressionAttributeNames: {
@@ -27,22 +30,27 @@ export default class EnrollmentDeletedEventHandler extends EnrollmentEventHandle
         },
         ExclusiveStartKey: lastEvaluatedKey,
       }));
-      if (Items) {
-        for (const classAssignmentEntity of Items as ClassAssignmentEntity[]) {
+      if (classAssignmentEntities) {
+        for (const classAssignmentEntity of classAssignmentEntities as ClassAssignmentEntity[]) {
           await this.deleteUserAssignment({
-            userId: deletedEnrollmentEntity.userId,
-            assignmentId: classAssignmentEntity.assignmentId,
+            key: {
+              userId: deletedEnrollmentEntity.userId,
+              assignmentId: classAssignmentEntity.assignmentId,
+            },
           });
-          countSuccess++;
+          deletedAssignmentCount++;
         }
       }
+      lastEvaluatedKey = LastEvaluatedKey as any;
     } while (lastEvaluatedKey);
-    console.info('@EnrollmentDeletedEventHandler * successfully processed all items * success count:', countSuccess);
+    console.info('@EnrollmentDeletedEventHandler * successfully deleted ' + deletedAssignmentCount + ' user assignments!');
   }
 
   private async deleteUserAssignment(param: {
-    userId: number,
-    assignmentId: number
+    key: {
+      userId: number,
+      assignmentId: number
+    }
   }): Promise<void> {
     const env = await this.getEnv();
     let RETRIES: number = 0;
@@ -51,7 +59,7 @@ export default class EnrollmentDeletedEventHandler extends EnrollmentEventHandle
       try {
         await this.dynamoDBDocumentClient.send(new DeleteCommand({
           TableName: env.USER_ASSIGNMENT_TABLE,
-          Key: param,
+          Key: param.key,
         }));
         return;
       } catch (exception) {

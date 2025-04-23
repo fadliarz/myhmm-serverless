@@ -14,7 +14,7 @@ export default class ClassAssignmentDeletedEventHandler {
     const { OldImage, env } = param;
     let lastEvaluatedKey: Record<string, any> | undefined = undefined;
     do {
-      const { Items } = await this.dynamoDBDocumentClient.send(
+      const { Items, LastEvaluatedKey } = await this.dynamoDBDocumentClient.send(
         new QueryCommand({
           TableName: env.ENROLLMENT_TABLE,
           IndexName: 'classId_userId',
@@ -33,6 +33,7 @@ export default class ClassAssignmentDeletedEventHandler {
           await this.processItem({ ...param, Item });
         }
       }
+      lastEvaluatedKey = LastEvaluatedKey as any;
     } while (lastEvaluatedKey);
   }
 
