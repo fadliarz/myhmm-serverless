@@ -1,7 +1,7 @@
 export default abstract class DomainEvent<T extends object> {
   private readonly _data: T;
 
-  protected constructor(data: T) {
+  public constructor(data: T) {
     this._data = data;
   }
 
