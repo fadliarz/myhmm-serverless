@@ -24,7 +24,7 @@ export default class ClassAssignmentCreatedEventHandler {
     let countSuccess: number = 0;
     let lastEvaluatedKey: Record<string, any> | undefined = undefined;
     do {
-      const { Items } = await this.dynamoDBDocumentClient.send(new QueryCommand({
+      const { Items, LastEvaluatedKey } = await this.dynamoDBDocumentClient.send(new QueryCommand({
         TableName: env.ENROLLMENT_TABLE,
         IndexName: 'classId_userId',
         KeyConditionExpression: '#classId = :value0',
@@ -42,6 +42,7 @@ export default class ClassAssignmentCreatedEventHandler {
           countSuccess++;
         }
       }
+      lastEvaluatedKey = LastEvaluatedKey as any;
     } while (lastEvaluatedKey);
     console.info('@ClassAssignmentCreatedEventHandler * successfully processed all items * success count:', countSuccess);
   }
