@@ -9,6 +9,7 @@ import EnrollmentEntity from '../../../common/entity/EnrollmentEntity';
 import ClassAssignmentEntity from '../../../common/entity/ClassAssignmentEntity';
 import UserAssignmentEntity from '../../../common/entity/UserAssignmentEntity';
 import { CompletionStatus } from '../../../common/CompletionStatus';
+import { AssignmentType } from '../../../common/AssignmentType';
 
 export default class EnrollmentCreatedEventHandler extends EnrollmentEventHandler {
   private readonly dynamoDBDocumentClient: DynamoDBDocumentClient = generateDynamoDBDocumentClient();
@@ -38,6 +39,7 @@ export default class EnrollmentCreatedEventHandler extends EnrollmentEventHandle
           const userAssignmentEntity: UserAssignmentEntity = new UserAssignmentEntity();
           userAssignmentEntity.userId = enrollmentEntity.userId;
           userAssignmentEntity.assignmentId = classAssignmentEntity.assignmentId;
+          userAssignmentEntity.assignmentType = AssignmentType.CLASS_ASSIGNMENT;
           userAssignmentEntity.completionStatus = CompletionStatus.NOT_STARTED;
           userAssignmentEntity.createdAt = classAssignmentEntity.createdAt;
           userAssignmentEntity.classId = classAssignmentEntity.classId;
