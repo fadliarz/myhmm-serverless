@@ -17,7 +17,7 @@ export const handleEnrollmentEvent: SQSHandler = async (
       const enrollmentCreatedEventHandler: EnrollmentCreatedEventHandler = new EnrollmentCreatedEventHandler();
       await enrollmentCreatedEventHandler.handle(new EnrollmentCreatedEvent({ NewImage: unmarshall(NewImage) as any }));
     } else if (eventName === EventName.REMOVE) {
-      
+
     } else {
       throw new Error('@handleClassAssignmentEvent * eventName is not supported');
     }

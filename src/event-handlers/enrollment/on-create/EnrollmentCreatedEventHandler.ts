@@ -51,7 +51,7 @@ export default class EnrollmentCreatedEventHandler extends EnrollmentEventHandle
   private async createUserAssignment(param: {
     userAssignmentEntity: UserAssignmentEntity
   }): Promise<void> {
-    console.log('userAssignmentEntity:', UserAssignmentEntity);
+    console.log('userAssignmentEntity:', param.userAssignmentEntity);
     const env = await this.getEnv();
     let RETRIES: number = 0;
     const MAX_RETRIES: number = 3;
