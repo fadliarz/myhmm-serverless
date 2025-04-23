@@ -49,3 +49,10 @@ jobs:
               --function-name CLASS_ASSIGNMENT_LAMBDA \
               --zip-file fileb://handleClassAssignmentEvent.zip \
               --publish
+
+      - name: Deploy lambda code (enrollment)
+        run: |
+          aws lambda update-function-code \
+              --function-name ENROLLMENT_LAMBDA \
+              --zip-file fileb://handleEnrollmentEvent.zip \
+              --publish
