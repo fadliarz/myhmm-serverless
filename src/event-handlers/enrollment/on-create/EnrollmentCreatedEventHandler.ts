@@ -51,7 +51,6 @@ export default class EnrollmentCreatedEventHandler extends EnrollmentEventHandle
   private async createUserAssignment(param: {
     userAssignmentEntity: UserAssignmentEntity
   }): Promise<void> {
-    console.log('userAssignmentEntity:', param.userAssignmentEntity);
     const env = await this.getEnv();
     let RETRIES: number = 0;
     const MAX_RETRIES: number = 3;
@@ -59,7 +58,7 @@ export default class EnrollmentCreatedEventHandler extends EnrollmentEventHandle
       try {
         await this.dynamoDBDocumentClient.send(new PutCommand({
           TableName: env.USER_ASSIGNMENT_TABLE,
-          Item: UserAssignmentEntity,
+          Item: param.userAssignmentEntity,
           ConditionExpression: 'attribute_not_exists(userId) AND attribute_not_exists(assignmentId)',
         }));
         return;
