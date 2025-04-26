@@ -25,7 +25,7 @@ export default class ClassDeletedEventHandler extends ClassEventHandler {
         Items: classAssignmentEntities,
         LastEvaluatedKey,
       } = await this.dynamoDBDocumentClient.send(new QueryCommand({
-        TableName: env.CLASS_ASSIGNMENT,
+        TableName: env.CLASS_ASSIGNMENT_TABLE,
         KeyConditionExpression: '#classId = :value0 AND #courseId = :value1',
         ExpressionAttributeNames: {
           '#classId': 'classId',
@@ -65,7 +65,7 @@ export default class ClassDeletedEventHandler extends ClassEventHandler {
     while (RETRIES <= MAX_RETRIES) {
       try {
         await this.dynamoDBDocumentClient.send(new DeleteCommand({
-          TableName: env.CLASS_ASSIGNMENT,
+          TableName: env.CLASS_ASSIGNMENT_TABLE,
           Key: param.key,
         }));
         return;
