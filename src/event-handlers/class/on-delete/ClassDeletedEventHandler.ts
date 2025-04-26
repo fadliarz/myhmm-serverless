@@ -26,26 +26,26 @@ export default class ClassDeletedEventHandler extends ClassEventHandler {
         LastEvaluatedKey,
       } = await this.dynamoDBDocumentClient.send(new QueryCommand({
         TableName: env.CLASS_ASSIGNMENT_TABLE,
-        KeyConditionExpression: '#classId = :value0 AND #courseId = :value1',
+        KeyConditionExpression: '#classId = :value0',
         ExpressionAttributeNames: {
           '#classId': 'classId',
-          '#courseId': 'courseId',
         },
         ExpressionAttributeValues: {
           ':value0': classId,
-          ':value1': courseId,
         },
         ExclusiveStartKey: lastEvaluatedKey,
       }));
       if (classAssignmentEntities) {
         for (const classAssignmentEntity of classAssignmentEntities as ClassAssignmentEntity[]) {
-          await this.deleteClassAssignment({
-            key: {
-              classId,
-              assignmentId: classAssignmentEntity.assignmentId,
-            },
-          });
-          deletedClassAssignmentCount++;
+          if (classAssignmentEntity.courseId === courseId) {
+            await this.deleteClassAssignment({
+              key: {
+                classId,
+                assignmentId: classAssignmentEntity.assignmentId,
+              },
+            });
+            deletedClassAssignmentCount++;
+          }
         }
       }
       lastEvaluatedKey = LastEvaluatedKey as any;
