@@ -48,6 +48,12 @@ jobs:
       - name: Zip lambda code (lesson)
         run: zip -r handleLessonEvent.zip handleLessonEvent.js
 
+      - name: Bundle lambda code (class)
+        run: "npx esbuild dist/event-handlers/class/handleClassEvent.js --bundle --platform=node --outfile=handleClassEvent.js"
+
+      - name: Zip lambda code (class)
+        run: zip -r handleClassEvent.zip handleClassEvent.js
+
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
@@ -81,4 +87,11 @@ jobs:
           aws lambda update-function-code \
               --function-name LESSON_LAMBDA \
               --zip-file fileb://handleLessonEvent.zip \
+              --publish
+
+      - name: Deploy lambda code (class)
+        run: |
+          aws lambda update-function-code \
+              --function-name CLASS_LAMBDA \
+              --zip-file fileb://handleClassEvent.zip \
               --publish
