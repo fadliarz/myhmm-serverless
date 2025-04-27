@@ -6,6 +6,7 @@ import ClassAssignmentCreatedEventHandler from './on-create/ClassAssignmentCreat
 import ClassAssignmentDeletedEventHandler from './on-delete/ClassAssignmentDeletedEventHandler';
 import { unmarshall } from '@aws-sdk/util-dynamodb';
 import ClassAssignmentCreatedEvent from './event/ClassAssignmentCreatedEvent';
+import ClassAssignmentDeletedEvent from './event/ClassAssignmentDeletedEvent';
 
 export const handleClassAssignmentEvent: SQSHandler = async (
   event: SQSEvent,
@@ -34,7 +35,7 @@ export const handleClassAssignmentEvent: SQSHandler = async (
       }));
     } else if (eventName === EventName.REMOVE) {
       const classAssignmentDeletedEventHandler: ClassAssignmentDeletedEventHandler = new ClassAssignmentDeletedEventHandler();
-      await classAssignmentDeletedEventHandler.handle({ OldImage: unmarshall(OldImage) as any, env });
+      await classAssignmentDeletedEventHandler.handle(new ClassAssignmentDeletedEvent({ OldImage: unmarshall(OldImage) as any }));
     } else {
       throw new Error('@handleClassAssignmentEvent * eventName is not supported');
     }

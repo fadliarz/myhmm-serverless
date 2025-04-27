@@ -2,18 +2,21 @@ import { DeleteCommand, DynamoDBDocumentClient, QueryCommand } from '@aws-sdk/li
 import generateDynamoDBDocumentClient from '../../../common/generateDynamoDBDocumentClient';
 import MaxRetriesException from '../../../common/MaxRetriesException';
 import TimerService from '../../../common/TimerService';
+import ClassAssignmentEventHandler from '../ClassAssignmentEventHandler';
+import ClassAssignmentDeletedEvent from '../event/ClassAssignmentDeletedEvent';
+import ClassAssignmentEntity from '../../../common/entity/ClassAssignmentEntity';
+import EnrollmentEntity from '../../../common/entity/EnrollmentEntity';
 
-export default class ClassAssignmentDeletedEventHandler {
+export default class ClassAssignmentDeletedEventHandler extends ClassAssignmentEventHandler {
   private readonly dynamoDBDocumentClient: DynamoDBDocumentClient = generateDynamoDBDocumentClient();
 
-  public async handle(param: {
-    OldImage: { courseId: number, classId: number, assignmentId: number },
-    env: { ENROLLMENT_TABLE: string, USER_ASSIGNMENT_TABLE: string }
-  }): Promise<void> {
-    const { OldImage, env } = param;
+  public async handle(classAssignmentDeletedEvent: ClassAssignmentDeletedEvent): Promise<void> {
+    const env = await this.getEnv();
+    const deletedClassAssignmentEntity: ClassAssignmentEntity = classAssignmentDeletedEvent.data.OldImage;
+    let deletedUserAssignmentCount: number = 0;
     let lastEvaluatedKey: Record<string, any> | undefined = undefined;
     do {
-      const { Items, LastEvaluatedKey } = await this.dynamoDBDocumentClient.send(
+      const { Items: enrollmentEntities, LastEvaluatedKey } = await this.dynamoDBDocumentClient.send(
         new QueryCommand({
           TableName: env.ENROLLMENT_TABLE,
           IndexName: 'classId_userId',
@@ -22,35 +25,41 @@ export default class ClassAssignmentDeletedEventHandler {
             '#classId': 'classId',
           },
           ExpressionAttributeValues: {
-            ':value0': OldImage.classId,
+            ':value0': deletedClassAssignmentEntity.classId,
           },
           ExclusiveStartKey: lastEvaluatedKey,
         }),
       );
-      if (Items) {
-        for (const Item of Items) {
-          await this.processItem({ ...param, Item });
+      if (enrollmentEntities) {
+        for (const enrollmentEntity of enrollmentEntities as EnrollmentEntity[]) {
+          await this.deleteUserAssignment({
+            key: {
+              userId: enrollmentEntity.userId,
+              assignmentId: deletedClassAssignmentEntity.assignmentId,
+            },
+          });
+          deletedUserAssignmentCount++;
         }
       }
       lastEvaluatedKey = LastEvaluatedKey as any;
     } while (lastEvaluatedKey);
+    console.info('@ClassAssignmentDeletedEventHandler * successfully deleted ' + deletedUserAssignmentCount + ' user assignments!');
   }
 
-  private async processItem(param: {
-    OldImage: { courseId: number, classId: number, assignmentId: number },
-    env: { ENROLLMENT_TABLE: string, USER_ASSIGNMENT_TABLE: string }, Item: Record<string, any>
+  private async deleteUserAssignment(param: {
+    key: {
+      userId: number,
+      assignmentId: number
+    }
   }): Promise<void> {
-    const { OldImage, env, Item } = param;
+    const env = await this.getEnv();
     let RETRIES: number = 0;
     const MAX_RETRIES: number = 3;
     while (RETRIES <= MAX_RETRIES) {
       try {
         await this.dynamoDBDocumentClient.send(new DeleteCommand({
           TableName: env.USER_ASSIGNMENT_TABLE,
-          Key: {
-            userId: Item.userId,
-            assignmentId: OldImage.assignmentId,
-          },
+          Key: param.key,
         }));
         return;
       } catch (exception) {
