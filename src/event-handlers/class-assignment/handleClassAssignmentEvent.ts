@@ -5,6 +5,7 @@ import { EventName } from '../../common/EventName';
 import ClassAssignmentCreatedEventHandler from './on-create/ClassAssignmentCreatedEventHandler';
 import ClassAssignmentDeletedEventHandler from './on-delete/ClassAssignmentDeletedEventHandler';
 import { unmarshall } from '@aws-sdk/util-dynamodb';
+import ClassAssignmentCreatedEvent from './event/ClassAssignmentCreatedEvent';
 
 export const handleClassAssignmentEvent: SQSHandler = async (
   event: SQSEvent,
@@ -28,7 +29,9 @@ export const handleClassAssignmentEvent: SQSHandler = async (
     const { NewImage, OldImage } = dynamodb;
     if (eventName === EventName.INSERT) {
       const classAssignmentCreatedEventHandler: ClassAssignmentCreatedEventHandler = new ClassAssignmentCreatedEventHandler();
-      await classAssignmentCreatedEventHandler.handle({ NewImage: unmarshall(NewImage) as any, env });
+      await classAssignmentCreatedEventHandler.handle(new ClassAssignmentCreatedEvent({
+        NewImage: unmarshall(NewImage) as any,
+      }));
     } else if (eventName === EventName.REMOVE) {
       const classAssignmentDeletedEventHandler: ClassAssignmentDeletedEventHandler = new ClassAssignmentDeletedEventHandler();
       await classAssignmentDeletedEventHandler.handle({ OldImage: unmarshall(OldImage) as any, env });

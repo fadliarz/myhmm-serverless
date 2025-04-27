@@ -4,7 +4,6 @@ import MaxRetriesException from '../../../common/MaxRetriesException';
 import TimerService from '../../../common/TimerService';
 
 export default class ClassAssignmentDeletedEventHandler {
-
   private readonly dynamoDBDocumentClient: DynamoDBDocumentClient = generateDynamoDBDocumentClient();
 
   public async handle(param: {
