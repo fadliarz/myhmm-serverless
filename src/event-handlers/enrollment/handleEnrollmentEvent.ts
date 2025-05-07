@@ -1,5 +1,5 @@
 import 'dotenv/config';
-import { Context, SQSEvent, SQSHandler } from 'aws-lambda';
+import { SQSEvent, SQSHandler } from 'aws-lambda';
 import { EventName } from '../../common/EventName';
 import { unmarshall } from '@aws-sdk/util-dynamodb';
 import EnrollmentCreatedEventHandler from './on-create/EnrollmentCreatedEventHandler';
@@ -9,7 +9,6 @@ import EnrollmentDeletedEvent from './event/EnrollmentDeletedEvent';
 
 export const handleEnrollmentEvent: SQSHandler = async (
   event: SQSEvent,
-  context: Context,
 ): Promise<void> => {
   for (const record of event.Records) {
     const body = JSON.parse(record.body);

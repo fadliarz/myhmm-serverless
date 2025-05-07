@@ -1,5 +1,5 @@
 import 'dotenv/config';
-import { Context, SQSEvent, SQSHandler } from 'aws-lambda';
+import { SQSEvent, SQSHandler } from 'aws-lambda';
 import { cleanEnv, str } from 'envalid';
 import { EventName } from '../../common/EventName';
 import ClassAssignmentCreatedEventHandler from './on-create/ClassAssignmentCreatedEventHandler';
@@ -10,7 +10,6 @@ import ClassAssignmentDeletedEvent from './event/ClassAssignmentDeletedEvent';
 
 export const handleClassAssignmentEvent: SQSHandler = async (
   event: SQSEvent,
-  context: Context,
 ): Promise<void> => {
   let env: { ENROLLMENT_TABLE: string, USER_ASSIGNMENT_TABLE: string };
   try {
