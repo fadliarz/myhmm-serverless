@@ -54,6 +54,12 @@ jobs:
       - name: Zip lambda code (class)
         run: zip -r handleClassEvent.zip handleClassEvent.js
 
+      - name: Bundle lambda code (category)
+        run: "npx esbuild dist/event-handlers/category/handleCategoryEvent.js --bundle --platform=node --outfile=handleCategoryEvent.js"
+
+      - name: Zip lambda code (category)
+        run: zip -r handleCategoryEvent.zip handleCategoryEvent.js
+
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
@@ -94,4 +100,11 @@ jobs:
           aws lambda update-function-code \
               --function-name CLASS_LAMBDA \
               --zip-file fileb://handleClassEvent.zip \
+              --publish
+
+      - name: Deploy lambda code (category)
+        run: |
+          aws lambda update-function-code \
+              --function-name CATEGORY_LAMBDA \
+              --zip-file fileb://handleCategoryEvent.zip \
               --publish
