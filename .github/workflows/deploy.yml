@@ -24,18 +24,6 @@ jobs:
       - name: Build code
         run: npx tsc
 
-      - name: Bundle lambda code (class-assignment)
-        run: "npx esbuild dist/event-handlers/class-assignment/handleClassAssignmentEvent.js --bundle --platform=node --outfile=handleClassAssignmentEvent.js"
-
-      - name: Zip lambda code (class-assignment)
-        run: zip -r handleClassAssignmentEvent.zip handleClassAssignmentEvent.js
-
-      - name: Bundle lambda code (enrollment)
-        run: "npx esbuild dist/event-handlers/enrollment/handleEnrollmentEvent.js --bundle --platform=node --outfile=handleEnrollmentEvent.js"
-
-      - name: Zip lambda code (enrollment)
-        run: zip -r handleEnrollmentEvent.zip handleEnrollmentEvent.js
-
       - name: Bundle lambda code (course)
         run: "npx esbuild dist/event-handlers/course/handleCourseEvent.js --bundle --platform=node --outfile=handleCourseEvent.js"
 
@@ -72,20 +60,6 @@ jobs:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ap-southeast-3
-
-      - name: Deploy lambda code (class-assignment)
-        run: |
-          aws lambda update-function-code \
-              --function-name CLASS_ASSIGNMENT_LAMBDA \
-              --zip-file fileb://handleClassAssignmentEvent.zip \
-              --publish
-
-      - name: Deploy lambda code (enrollment)
-        run: |
-          aws lambda update-function-code \
-              --function-name ENROLLMENT_LAMBDA \
-              --zip-file fileb://handleEnrollmentEvent.zip \
-              --publish
 
       - name: Deploy lambda code (course)
         run: |
