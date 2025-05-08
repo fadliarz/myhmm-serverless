@@ -16,6 +16,7 @@ export default class ClassDeletedEventHandler extends ClassEventHandler {
     const deletedClassEntity: ClassEntity = classDeletedEvent.data.OldImage;
     await this.deleteClassAssignments({ classId: deletedClassEntity.classId, courseId: deletedClassEntity.courseId });
     await this.deleteEnrollments({ classId: deletedClassEntity.classId, courseId: deletedClassEntity.courseId });
+    await this.deleteInstructors({ classId: deletedClassEntity.classId, courseId: deletedClassEntity.courseId });
   }
 
   private async deleteClassAssignments(param: { classId: number, courseId: number }): Promise<void> {
