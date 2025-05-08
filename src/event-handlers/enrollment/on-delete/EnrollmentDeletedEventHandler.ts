@@ -13,7 +13,6 @@ export default class EnrollmentDeletedEventHandler extends EnrollmentEventHandle
   public async handle(enrollmentDeletedEvent: EnrollmentDeletedEvent) {
     const env = await this.getEnv();
     const deletedEnrollmentEntity: EnrollmentEntity = enrollmentDeletedEvent.data.OldImage;
-    let deletedAssignmentCount: number = 0;
     let lastEvaluatedKey: Record<string, any> | undefined = undefined;
     do {
       const {
@@ -30,6 +29,7 @@ export default class EnrollmentDeletedEventHandler extends EnrollmentEventHandle
         },
         ExclusiveStartKey: lastEvaluatedKey,
       }));
+      console.info(`[EnrollmentDeletedEventHandler] Retrieved ${classAssignmentEntities?.length ?? 0} class assignments`);
       if (classAssignmentEntities) {
         for (const classAssignmentEntity of classAssignmentEntities as ClassAssignmentEntity[]) {
           await this.deleteUserAssignment({
@@ -38,12 +38,10 @@ export default class EnrollmentDeletedEventHandler extends EnrollmentEventHandle
               assignmentId: classAssignmentEntity.assignmentId,
             },
           });
-          deletedAssignmentCount++;
         }
       }
       lastEvaluatedKey = LastEvaluatedKey as any;
     } while (lastEvaluatedKey);
-    console.info('@EnrollmentDeletedEventHandler * successfully deleted ' + deletedAssignmentCount + ' user assignments!');
   }
 
   private async deleteUserAssignment(param: {
@@ -63,6 +61,8 @@ export default class EnrollmentDeletedEventHandler extends EnrollmentEventHandle
         }));
         return;
       } catch (exception) {
+        console.info('[EnrollmentDeletedEventHandler:deleteUserAssignment] Exception thrown:', exception);
+        console.info(`[EnrollmentDeletedEventHandler:deleteUserAssignment] Attempting to retry (${RETRIES})...`);
         RETRIES++;
         if (RETRIES > MAX_RETRIES) {
           throw new MaxRetriesException(exception as Error);

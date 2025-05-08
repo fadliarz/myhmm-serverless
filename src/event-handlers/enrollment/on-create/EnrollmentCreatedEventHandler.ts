@@ -17,7 +17,6 @@ export default class EnrollmentCreatedEventHandler extends EnrollmentEventHandle
   public async handle(enrollmentCreatedEvent: EnrollmentCreatedEvent) {
     const env = await this.getEnv();
     const enrollmentEntity: EnrollmentEntity = enrollmentCreatedEvent.data.NewImage;
-    let createdAssignmentCount: number = 0;
     let lastEvaluatedKey: Record<string, any> | undefined = undefined;
     do {
       const {
@@ -34,6 +33,7 @@ export default class EnrollmentCreatedEventHandler extends EnrollmentEventHandle
         },
         ExclusiveStartKey: lastEvaluatedKey,
       }));
+      console.info(`[EnrollmentCreatedEventHandler] Retrieved ${classAssignmentEntities?.length ?? 0} class assignments`);
       if (classAssignmentEntities) {
         for (const classAssignmentEntity of classAssignmentEntities as ClassAssignmentEntity[]) {
           const userAssignmentEntity: UserAssignmentEntity = new UserAssignmentEntity();
@@ -46,12 +46,10 @@ export default class EnrollmentCreatedEventHandler extends EnrollmentEventHandle
           await this.createUserAssignment({
             userAssignmentEntity,
           });
-          createdAssignmentCount++;
         }
       }
       lastEvaluatedKey = LastEvaluatedKey as any;
     } while (lastEvaluatedKey);
-    console.info('@EnrollmentCreatedEventHandler * successfully created ' + createdAssignmentCount + ' user assignments!');
   }
 
   private async createUserAssignment(param: {
@@ -70,6 +68,8 @@ export default class EnrollmentCreatedEventHandler extends EnrollmentEventHandle
         return;
       } catch (exception) {
         if (exception instanceof ConditionalCheckFailedException) return;
+        console.info('[EnrollmentCreatedEventHandler:createUserAssignment] Exception thrown:', exception);
+        console.info(`[EnrollmentCreatedEventHandler:createUserAssignment] Attempting to retry (${RETRIES})...`);
         RETRIES++;
         if (RETRIES > MAX_RETRIES) {
           throw new MaxRetriesException(exception as Error);
