@@ -18,7 +18,6 @@ export default class ClassDeletedEventHandler extends ClassEventHandler {
   private async deleteClassAssignments(param: { classId: number, courseId: number }): Promise<void> {
     const { classId, courseId } = param;
     const env = await this.getEnv();
-    let deletedClassAssignmentCount: number = 0;
     let lastEvaluatedKey: Record<string, any> | undefined = undefined;
     do {
       const {
@@ -35,6 +34,7 @@ export default class ClassDeletedEventHandler extends ClassEventHandler {
         },
         ExclusiveStartKey: lastEvaluatedKey,
       }));
+      console.info(`[ClassDeletedEventHandler] Retrieved ${classAssignmentEntities?.length ?? 0} class assignments`);
       if (classAssignmentEntities) {
         for (const classAssignmentEntity of classAssignmentEntities as ClassAssignmentEntity[]) {
           if (classAssignmentEntity.courseId === courseId) {
@@ -44,13 +44,11 @@ export default class ClassDeletedEventHandler extends ClassEventHandler {
                 assignmentId: classAssignmentEntity.assignmentId,
               },
             });
-            deletedClassAssignmentCount++;
           }
         }
       }
       lastEvaluatedKey = LastEvaluatedKey as any;
     } while (lastEvaluatedKey);
-    console.info('@ClassDeletedEventHandler * successfully deleted ' + deletedClassAssignmentCount + ' class assignments!');
   }
 
   private async deleteClassAssignment(param: {
@@ -70,6 +68,8 @@ export default class ClassDeletedEventHandler extends ClassEventHandler {
         }));
         return;
       } catch (exception) {
+        console.info('[ClassDeletedEventHandler:removeCourseCategory] Exception thrown:', exception);
+        console.info(`[ClassDeletedEventHandler:removeCourseCategory] Attempting to retry (${RETRIES})...`);
         RETRIES++;
         if (RETRIES > MAX_RETRIES) {
           throw new MaxRetriesException(exception as Error);
