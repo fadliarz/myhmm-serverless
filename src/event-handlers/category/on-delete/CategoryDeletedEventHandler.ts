@@ -36,6 +36,7 @@ export default class CategoryDeletedEventHandler extends CategoryEventHandler {
         },
         ExclusiveStartKey: lastEvaluatedKey,
       }));
+      console.info(`[CategoryDeletedEventHandler] Retrieved ${categoryLinkKeys?.length ?? 0} keys`);
       if (categoryLinkKeys) {
         for (const categoryLinkKey of categoryLinkKeys as CategoryEntity[]) {
           await this.removeCourseCategory({
@@ -65,6 +66,8 @@ export default class CategoryDeletedEventHandler extends CategoryEventHandler {
         await this.deleteCategoryLink(courseId, categoryId);
         return;
       } catch (exception) {
+        console.info('[CategoryDeletedEventHandler:removeCourseCategory] Exception thrown:', exception);
+        console.info(`[CategoryDeletedEventHandler:removeCourseCategory] Attempting to retry (${RETRIES})...`);
         RETRIES++;
         if (RETRIES > MAX_RETRIES) {
           throw new MaxRetriesException(exception as Error);
@@ -96,6 +99,7 @@ export default class CategoryDeletedEventHandler extends CategoryEventHandler {
         }),
       );
     } catch (exception) {
+      console.info('[CategoryDeletedEventHandler:removeCategoryFromCourse] Exception thrown: ', exception);
       if (exception instanceof ConditionalCheckFailedException) return;
       throw exception;
     }
@@ -106,11 +110,15 @@ export default class CategoryDeletedEventHandler extends CategoryEventHandler {
     categoryId: number,
   ): Promise<void> {
     const env = await this.getEnv();
-    await this.dynamoDBDocumentClient.send(
-      new DeleteCommand({
-        TableName: env.CATEGORY_TABLE,
-        Key: new CategoryLinkKey({ categoryId, courseId }),
-      }),
-    );
+    try {
+      await this.dynamoDBDocumentClient.send(
+        new DeleteCommand({
+          TableName: env.CATEGORY_TABLE,
+          Key: new CategoryLinkKey({ categoryId, courseId }),
+        }),
+      );
+    } catch (exception) {
+      console.info('[CategoryDeletedEventHandler:deleteCategoryLink] Exception thrown: ', exception);
+    }
   }
 }

@@ -14,7 +14,10 @@ export const handleCategoryEvent: SQSHandler = async (
     const { OldImage } = dynamodb;
     if (eventName === EventName.REMOVE) {
       const categoryDeletedEventHandler: CategoryDeletedEventHandler = new CategoryDeletedEventHandler();
-      await categoryDeletedEventHandler.handle(new CategoryDeletedEvent({ OldImage: unmarshall(OldImage) as any }));
+      const categoryDeletedEvent: CategoryDeletedEvent = new CategoryDeletedEvent({ OldImage: unmarshall(OldImage) as any });
+      console.info('[Handler] Handling CategoryDeletedEvent:', JSON.stringify(categoryDeletedEvent));
+      await categoryDeletedEventHandler.handle(categoryDeletedEvent);
+      console.info('[Handler] Handled CategoryDeletedEvent:', JSON.stringify(categoryDeletedEvent));
     } else {
       throw new Error('@handleCategoryEvent * eventName is not supported');
     }
