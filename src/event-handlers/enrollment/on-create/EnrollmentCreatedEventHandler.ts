@@ -15,8 +15,16 @@ export default class EnrollmentCreatedEventHandler extends EnrollmentEventHandle
   private readonly dynamoDBDocumentClient: DynamoDBDocumentClient = generateDynamoDBDocumentClient();
 
   public async handle(enrollmentCreatedEvent: EnrollmentCreatedEvent) {
-    const env = await this.getEnv();
     const enrollmentEntity: EnrollmentEntity = enrollmentCreatedEvent.data.NewImage;
+    await this.createUserAssignments({ userId: enrollmentEntity.userId, classId: enrollmentEntity.classId });
+  }
+
+  private async createUserAssignments(param: {
+    userId: number,
+    classId: number
+  }): Promise<void> {
+    const { userId, classId } = param;
+    const env = await this.getEnv();
     let lastEvaluatedKey: Record<string, any> | undefined = undefined;
     do {
       const {
@@ -29,7 +37,7 @@ export default class EnrollmentCreatedEventHandler extends EnrollmentEventHandle
           '#classId': 'classId',
         },
         ExpressionAttributeValues: {
-          ':value0': enrollmentEntity.classId,
+          ':value0': classId,
         },
         ExclusiveStartKey: lastEvaluatedKey,
       }));
@@ -37,7 +45,7 @@ export default class EnrollmentCreatedEventHandler extends EnrollmentEventHandle
       if (classAssignmentEntities) {
         for (const classAssignmentEntity of classAssignmentEntities as ClassAssignmentEntity[]) {
           const userAssignmentEntity: UserAssignmentEntity = new UserAssignmentEntity();
-          userAssignmentEntity.userId = enrollmentEntity.userId;
+          userAssignmentEntity.userId = userId;
           userAssignmentEntity.assignmentId = classAssignmentEntity.assignmentId;
           userAssignmentEntity.assignmentType = AssignmentType.CLASS_ASSIGNMENT;
           userAssignmentEntity.completionStatus = CompletionStatus.NOT_STARTED;
@@ -50,7 +58,9 @@ export default class EnrollmentCreatedEventHandler extends EnrollmentEventHandle
       }
       lastEvaluatedKey = LastEvaluatedKey as any;
     } while (lastEvaluatedKey);
+
   }
+
 
   private async createUserAssignment(param: {
     userAssignmentEntity: UserAssignmentEntity

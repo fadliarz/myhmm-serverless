@@ -11,8 +11,16 @@ export default class EnrollmentDeletedEventHandler extends EnrollmentEventHandle
   private readonly dynamoDBDocumentClient: DynamoDBDocumentClient = generateDynamoDBDocumentClient();
 
   public async handle(enrollmentDeletedEvent: EnrollmentDeletedEvent) {
-    const env = await this.getEnv();
     const deletedEnrollmentEntity: EnrollmentEntity = enrollmentDeletedEvent.data.OldImage;
+    await this.deleteUserAssignments({
+      userId: deletedEnrollmentEntity.userId,
+      classId: deletedEnrollmentEntity.classId,
+    });
+  }
+
+  private async deleteUserAssignments(param: { userId: number, classId: number }): Promise<void> {
+    const { userId, classId } = param;
+    const env = await this.getEnv();
     let lastEvaluatedKey: Record<string, any> | undefined = undefined;
     do {
       const {
@@ -25,7 +33,7 @@ export default class EnrollmentDeletedEventHandler extends EnrollmentEventHandle
           '#classId': 'classId',
         },
         ExpressionAttributeValues: {
-          ':value0': deletedEnrollmentEntity.classId,
+          ':value0': classId,
         },
         ExclusiveStartKey: lastEvaluatedKey,
       }));
@@ -34,7 +42,7 @@ export default class EnrollmentDeletedEventHandler extends EnrollmentEventHandle
         for (const classAssignmentEntity of classAssignmentEntities as ClassAssignmentEntity[]) {
           await this.deleteUserAssignment({
             key: {
-              userId: deletedEnrollmentEntity.userId,
+              userId,
               assignmentId: classAssignmentEntity.assignmentId,
             },
           });
