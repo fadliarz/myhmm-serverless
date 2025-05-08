@@ -7,6 +7,7 @@ import CourseDeletedEvent from '../event/CourseDeletedEvent';
 import LessonEntity from '../../../common/entity/LessonEntity';
 import CourseEntity from '../../../common/entity/CourseEntity';
 import ClassEntity from '../../../common/entity/ClassEntity';
+import CategoryLinkKey from '../../../common/entity/CategoryLinkKey';
 
 export default class CourseDeletedEventHandler extends CourseEventHandler {
   private readonly dynamoDBDocumentClient: DynamoDBDocumentClient = generateDynamoDBDocumentClient();
@@ -15,6 +16,10 @@ export default class CourseDeletedEventHandler extends CourseEventHandler {
     const deletedCourseEntity: CourseEntity = courseDeletedEvent.data.OldImage;
     await this.deleteLessons({ courseId: deletedCourseEntity.courseId });
     await this.deleteClasses({ courseId: deletedCourseEntity.courseId });
+    await this.deleteCategoryLinks({
+      courseId: deletedCourseEntity.courseId,
+      categories: deletedCourseEntity.categories,
+    });
   }
 
   private async deleteLessons(param: { courseId: number }): Promise<void> {
@@ -139,5 +144,22 @@ export default class CourseDeletedEventHandler extends CourseEventHandler {
         await TimerService.sleepWith100MsBaseDelayExponentialBackoff(RETRIES);
       }
     }
+  }
+
+  private async deleteCategoryLinks(param: { courseId: number, categories?: Set<number> }): Promise<void> {
+    const { courseId, categories } = param;
+    if (!categories) return;
+    for (const categoryId of Array.from(categories)) {
+      await this.deleteCategoryLink({ courseId, categoryId });
+    }
+  }
+
+  private async deleteCategoryLink(param: { courseId: number, categoryId: number }): Promise<void> {
+    const { courseId, categoryId } = param;
+    const env = await this.getEnv();
+    await this.dynamoDBDocumentClient.send(new DeleteCommand({
+      TableName: env.CATEGORY_TABLE,
+      Key: new CategoryLinkKey({ categoryId, courseId }),
+    }));
   }
 }
