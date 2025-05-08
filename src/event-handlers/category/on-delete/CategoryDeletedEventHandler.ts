@@ -99,8 +99,8 @@ export default class CategoryDeletedEventHandler extends CategoryEventHandler {
         }),
       );
     } catch (exception) {
-      console.info('[CategoryDeletedEventHandler:removeCategoryFromCourse] Exception thrown: ', exception);
       if (exception instanceof ConditionalCheckFailedException) return;
+      console.info('[CategoryDeletedEventHandler:removeCategoryFromCourse] Exception thrown: ', exception);
       throw exception;
     }
   }
