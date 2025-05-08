@@ -60,6 +60,12 @@ jobs:
       - name: Zip lambda code (category)
         run: zip -r handleCategoryEvent.zip handleCategoryEvent.js
 
+      - name: Bundle lambda code (enrollment and class assignment)
+        run: "npx esbuild dist/event-handlers/enrollment-and-class-assignment/handleEnrollmentAndClassAssignmentEvent.js --bundle --platform=node --outfile=handleEnrollmentAndClassAssignmentEvent.js"
+
+      - name: Zip lambda code (enrollment and class assignment)
+        run: zip -r handleEnrollmentAndClassAssignmentEvent.zip handleEnrollmentAndClassAssignmentEvent.js
+
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
@@ -107,4 +113,11 @@ jobs:
           aws lambda update-function-code \
               --function-name CATEGORY_LAMBDA \
               --zip-file fileb://handleCategoryEvent.zip \
+              --publish
+
+      - name: Deploy lambda code (enrollment and class assignment)
+        run: |
+          aws lambda update-function-code \
+              --function-name ENROLLMENT_AND_CLASS_ASSIGNMENT_LAMBDA \
+              --zip-file fileb://handleEnrollmentAndClassAssignmentEvent.zip \
               --publish
