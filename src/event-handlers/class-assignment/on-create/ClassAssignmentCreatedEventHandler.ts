@@ -62,6 +62,7 @@ export default class ClassAssignmentCreatedEventHandler extends ClassAssignmentE
         await this.dynamoDBDocumentClient.send(new PutCommand({
           TableName: env.USER_ASSIGNMENT_TABLE,
           Item: param.userAssignmentEntity,
+          ConditionExpression: 'attribute_not_exists(userId) AND attribute_not_exists(assignmentId)',
         }));
         return;
       } catch (exception) {
