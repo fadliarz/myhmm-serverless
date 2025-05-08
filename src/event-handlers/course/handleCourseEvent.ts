@@ -14,9 +14,12 @@ export const handleCourseEvent: SQSHandler = async (
     const { OldImage } = dynamodb;
     if (eventName === EventName.REMOVE) {
       const courseDeletedEventHandler: CourseDeletedEventHandler = new CourseDeletedEventHandler();
-      await courseDeletedEventHandler.handle(new CourseDeletedEvent({ OldImage: unmarshall(OldImage) as any }));
+      const courseDeletedEvent: CourseDeletedEvent = new CourseDeletedEvent({ OldImage: unmarshall(OldImage) as any });
+      console.info('[Handler] Handling CourseDeletedEvent:', JSON.stringify(courseDeletedEvent));
+      await courseDeletedEventHandler.handle(courseDeletedEvent);
+      console.info('[Handler] Handled CourseDeletedEvent:', JSON.stringify(courseDeletedEvent));
     } else {
-      throw new Error('@handleCourseEvent * eventName is not supported');
+      throw new Error(`[Handler] Event name "${eventName}" is not supported`);
     }
   }
 };
