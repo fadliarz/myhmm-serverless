@@ -72,7 +72,7 @@ export default class CategoryDeletedEventHandler extends CategoryEventHandler {
         if (RETRIES > MAX_RETRIES) {
           throw new MaxRetriesException(exception as Error);
         }
-        await TimerService.sleepWith1000MsBaseDelayExponentialBackoff(RETRIES);
+        await TimerService.sleepWith100MsBaseDelayExponentialBackoff(RETRIES);
       }
     }
   }

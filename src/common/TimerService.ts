@@ -1,5 +1,5 @@
 export default class TimerService {
-  public static async sleepWith1000MsBaseDelayExponentialBackoff(
+  public static async sleepWith100MsBaseDelayExponentialBackoff(
     attempt: number,
   ): Promise<void> {
     return new Promise((resolve) => {
@@ -7,7 +7,7 @@ export default class TimerService {
         () => {
           resolve();
         },
-        1000 * Math.pow(2, attempt) + Math.floor(Math.random() * 1000),
+        100 * Math.pow(2, attempt) + Math.floor(Math.random() * 100),
       );
     });
   }
