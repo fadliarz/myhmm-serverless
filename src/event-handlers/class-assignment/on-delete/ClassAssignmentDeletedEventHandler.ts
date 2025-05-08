@@ -13,7 +13,6 @@ export default class ClassAssignmentDeletedEventHandler extends ClassAssignmentE
   public async handle(classAssignmentDeletedEvent: ClassAssignmentDeletedEvent): Promise<void> {
     const env = await this.getEnv();
     const deletedClassAssignmentEntity: ClassAssignmentEntity = classAssignmentDeletedEvent.data.OldImage;
-    let deletedUserAssignmentCount: number = 0;
     let lastEvaluatedKey: Record<string, any> | undefined = undefined;
     do {
       const { Items: enrollmentEntities, LastEvaluatedKey } = await this.dynamoDBDocumentClient.send(
@@ -30,6 +29,7 @@ export default class ClassAssignmentDeletedEventHandler extends ClassAssignmentE
           ExclusiveStartKey: lastEvaluatedKey,
         }),
       );
+      console.info(`[ClassAssignmentDeletedEventHandler] Retrieved ${enrollmentEntities?.length ?? 0} enrollments`);
       if (enrollmentEntities) {
         for (const enrollmentEntity of enrollmentEntities as EnrollmentEntity[]) {
           await this.deleteUserAssignment({
@@ -38,12 +38,10 @@ export default class ClassAssignmentDeletedEventHandler extends ClassAssignmentE
               assignmentId: deletedClassAssignmentEntity.assignmentId,
             },
           });
-          deletedUserAssignmentCount++;
         }
       }
       lastEvaluatedKey = LastEvaluatedKey as any;
     } while (lastEvaluatedKey);
-    console.info('@ClassAssignmentDeletedEventHandler * successfully deleted ' + deletedUserAssignmentCount + ' user assignments!');
   }
 
   private async deleteUserAssignment(param: {
@@ -63,6 +61,8 @@ export default class ClassAssignmentDeletedEventHandler extends ClassAssignmentE
         }));
         return;
       } catch (exception) {
+        console.info('[ClassAssignmentDeletedEventHandler:deleteUserAssignment] Exception thrown:', exception);
+        console.info(`[ClassAssignmentDeletedEventHandler:deleteUserAssignment] Attempting to retry (${RETRIES})...`);
         RETRIES++;
         if (RETRIES > MAX_RETRIES) {
           throw new MaxRetriesException(exception as Error);

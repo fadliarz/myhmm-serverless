@@ -17,7 +17,6 @@ export default class ClassAssignmentCreatedEventHandler extends ClassAssignmentE
   public async handle(classAssignmentCreatedEvent: ClassAssignmentCreatedEvent) {
     const env = await this.getEnv();
     const classAssignmentEntity: ClassAssignmentEntity = classAssignmentCreatedEvent.data.NewImage;
-    let createdUserAssignmentCount: number = 0;
     let lastEvaluatedKey: Record<string, any> | undefined = undefined;
     do {
       const { Items: enrollmentEntities, LastEvaluatedKey } = await this.dynamoDBDocumentClient.send(new QueryCommand({
@@ -32,6 +31,7 @@ export default class ClassAssignmentCreatedEventHandler extends ClassAssignmentE
         },
         ExclusiveStartKey: lastEvaluatedKey,
       }));
+      console.info(`[CategoryDeletedEventHandler] Retrieved ${enrollmentEntities?.length ?? 0} enrollments`);
       if (enrollmentEntities) {
         for (const enrollmentEntity of enrollmentEntities as EnrollmentEntity[]) {
           const userAssignmentEntity: UserAssignmentEntity = new UserAssignmentEntity();
@@ -45,12 +45,10 @@ export default class ClassAssignmentCreatedEventHandler extends ClassAssignmentE
           await this.createUserAssignment({
             userAssignmentEntity,
           });
-          createdUserAssignmentCount++;
         }
       }
       lastEvaluatedKey = LastEvaluatedKey as any;
     } while (lastEvaluatedKey);
-    console.info('@ClassAssignmentCreatedEventHandler * successfully created ' + createdUserAssignmentCount + ' user assignments!');
   }
 
   private async createUserAssignment(param: {
@@ -68,6 +66,8 @@ export default class ClassAssignmentCreatedEventHandler extends ClassAssignmentE
         return;
       } catch (exception) {
         if (exception instanceof ConditionalCheckFailedException) return;
+        console.info('[ClassAssignmentCreatedEventHandler:createUserAssignment] Exception thrown:', exception);
+        console.info(`[ClassAssignmentCreatedEventHandler:createUserAssignment] Attempting to retry (${RETRIES})...`);
         RETRIES++;
         if (RETRIES > MAX_RETRIES) {
           throw new MaxRetriesException(exception as Error);
