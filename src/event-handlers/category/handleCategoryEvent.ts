@@ -19,7 +19,7 @@ export const handleCategoryEvent: SQSHandler = async (
       await categoryDeletedEventHandler.handle(categoryDeletedEvent);
       console.info('[Handler] Handled CategoryDeletedEvent:', JSON.stringify(categoryDeletedEvent));
     } else {
-      throw new Error('@handleCategoryEvent * eventName is not supported');
+      throw new Error(`[Handler] Event name "${eventName}" is not supported`);
     }
   }
 };
