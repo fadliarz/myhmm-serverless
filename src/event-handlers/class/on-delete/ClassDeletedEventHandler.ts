@@ -65,6 +65,10 @@ export default class ClassDeletedEventHandler extends ClassEventHandler {
                 assignmentId: classAssignmentEntity.assignmentId,
               },
             });
+            await this.triggerClassAssignmentDeletedEventHandler({
+              classId,
+              assignmentId: classAssignmentEntity.assignmentId,
+            });
           }
         }
       }
@@ -147,7 +151,6 @@ export default class ClassDeletedEventHandler extends ClassEventHandler {
         }
       }
     }
-    await this.triggerClassAssignmentDeletedEventHandler({ classId, assignmentId });
   }
 
   private async triggerClassAssignmentDeletedEventHandler(param: {
