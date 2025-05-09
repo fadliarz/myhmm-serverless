@@ -22,6 +22,8 @@ import { DynamoDBExceptionCode } from '../../../common/DynamoDBExceptionCode';
 import EnrollmentKey from '../../../common/entity/EnrollmentKey';
 import InstructorKey from '../../../common/entity/InstructorKey';
 import UserKey from '../../../common/entity/UserKey';
+import ClassAssignmentDeletedEventHandler from '../../class-assignment/on-delete/ClassAssignmentDeletedEventHandler';
+import ClassAssignmentDeletedEvent from '../../class-assignment/event/ClassAssignmentDeletedEvent';
 
 export default class ClassDeletedEventHandler extends ClassEventHandler {
   private readonly dynamoDBDocumentClient: DynamoDBDocumentClient = generateDynamoDBDocumentClient();
@@ -145,6 +147,19 @@ export default class ClassDeletedEventHandler extends ClassEventHandler {
         }
       }
     }
+    await this.triggerClassAssignmentDeletedEventHandler({ classId, assignmentId });
+  }
+
+  private async triggerClassAssignmentDeletedEventHandler(param: {
+    classId: number,
+    assignmentId: number
+  }): Promise<void> {
+    const { classId, assignmentId } = param;
+    const classAssignmentDeletedEventHandler: ClassAssignmentDeletedEventHandler = new ClassAssignmentDeletedEventHandler();
+    const deletedClassAssignmentEntity: ClassAssignmentEntity = new ClassAssignmentEntity();
+    deletedClassAssignmentEntity.classId = classId;
+    deletedClassAssignmentEntity.assignmentId = assignmentId;
+    await classAssignmentDeletedEventHandler.handle(new ClassAssignmentDeletedEvent({ OldImage: deletedClassAssignmentEntity }));
   }
 
   private async deleteEnrollments(param: { classId: number, courseId: number }): Promise<void> {
@@ -383,7 +398,6 @@ export default class ClassDeletedEventHandler extends ClassEventHandler {
             CancellationReasons[0].Code === DynamoDBExceptionCode.CONDITIONAL_CHECK_FAILED
           ) return;
         }
-
         console.info('[ClassDeletedEventHandler:deleteInstructor] Exception thrown:', exception);
         console.info(`[ClassDeletedEventHandler:deleteInstructor] Attempting to retry (${RETRIES})...`);
         RETRIES++;
