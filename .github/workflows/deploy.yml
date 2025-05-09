@@ -60,6 +60,12 @@ jobs:
       - name: Zip lambda code (tag)
         run: zip -r handleTagEvent.zip handleTagEvent.js
 
+      - name: Bundle lambda code (scholarship)
+        run: "npx esbuild dist/event-handlers/scholarship/handleScholarshipEvent.js --bundle --platform=node --outfile=handleScholarshipEvent.js"
+
+      - name: Zip lambda code (scholarship)
+        run: zip -r handleScholarshipEvent.zip handleScholarshipEvent.js
+
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
@@ -107,4 +113,11 @@ jobs:
           aws lambda update-function-code \
               --function-name TAG_LAMBDA \
               --zip-file fileb://handleTagEvent.zip \
+              --publish
+
+      - name: Deploy lambda code (scholarship)
+        run: |
+          aws lambda update-function-code \
+              --function-name SCHOLARSHIP_LAMBDA \
+              --zip-file fileb://handleScholarshipEvent.zip \
               --publish
