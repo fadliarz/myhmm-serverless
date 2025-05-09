@@ -15,9 +15,9 @@ export const handleClassEvent: SQSHandler = async (
     if (eventName === EventName.REMOVE) {
       const classDeletedEventHandler: ClassDeletedEventHandler = new ClassDeletedEventHandler();
       const classDeletedEvent: ClassDeletedEvent = new ClassDeletedEvent({ OldImage: unmarshall(OldImage) as any });
-      console.info('[Handler] Handling CategoryDeletedEvent:', JSON.stringify(classDeletedEvent));
+      console.info('[Handler] Handling ClassDeletedEvent:', JSON.stringify(classDeletedEvent));
       await classDeletedEventHandler.handle(classDeletedEvent);
-      console.info('[Handler] Handled CategoryDeletedEvent:', JSON.stringify(classDeletedEvent));
+      console.info('[Handler] Handled ClassDeletedEvent:', JSON.stringify(classDeletedEvent));
 
     } else {
       throw new Error(`[Handler] Event name "${eventName}" is not supported`);
