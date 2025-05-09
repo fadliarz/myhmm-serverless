@@ -54,6 +54,12 @@ jobs:
       - name: Zip lambda code (enrollment and class assignment)
         run: zip -r handleEnrollmentAndClassAssignmentEvent.zip handleEnrollmentAndClassAssignmentEvent.js
 
+      - name: Bundle lambda code (tag)
+        run: "npx esbuild dist/event-handlers/tag/handleTagEvent.js --bundle --platform=node --outfile=handleTagEvent.js"
+
+      - name: Zip lambda code (tag)
+        run: zip -r handleTagEvent.zip handleTagEvent.js
+
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
@@ -94,4 +100,11 @@ jobs:
           aws lambda update-function-code \
               --function-name ENROLLMENT_AND_CLASS_ASSIGNMENT_LAMBDA \
               --zip-file fileb://handleEnrollmentAndClassAssignmentEvent.zip \
+              --publish
+
+      - name: Deploy lambda code (tag)
+        run: |
+          aws lambda update-function-code \
+              --function-name TAG_LAMBDA \
+              --zip-file fileb://handleTagEvent.zip \
               --publish
