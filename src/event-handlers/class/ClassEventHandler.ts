@@ -9,6 +9,7 @@ export default abstract class ClassEventHandler {
     INSTRUCTOR_TABLE: string
     INSTRUCTOR_TABLE_GSI: string
     COURSE_TABLE: string,
+    USER_TABLE: string,
   }> {
     return cleanEnv(process.env, {
       CLASS_ASSIGNMENT_TABLE: str(),
@@ -17,6 +18,7 @@ export default abstract class ClassEventHandler {
       INSTRUCTOR_TABLE: str(),
       INSTRUCTOR_TABLE_GSI: str(),
       COURSE_TABLE: str(),
+      USER_TABLE: str(),
     });
   }
 };

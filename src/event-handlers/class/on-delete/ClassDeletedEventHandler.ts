@@ -20,6 +20,8 @@ import { TransactionCanceledException } from '@aws-sdk/client-dynamodb';
 import InternalServerException from '../../../common/exception/InternalServerException';
 import { DynamoDBExceptionCode } from '../../../common/DynamoDBExceptionCode';
 import EnrollmentKey from '../../../common/entity/EnrollmentKey';
+import InstructorKey from '../../../common/entity/InstructorKey';
+import UserKey from '../../../common/entity/UserKey';
 
 export default class ClassDeletedEventHandler extends ClassEventHandler {
   private readonly dynamoDBDocumentClient: DynamoDBDocumentClient = generateDynamoDBDocumentClient();
@@ -285,6 +287,7 @@ export default class ClassDeletedEventHandler extends ClassEventHandler {
             await this.deleteInstructor({
               key: {
                 userId: instructorEntity.userId,
+                courseId,
                 classId,
               },
             });
@@ -298,20 +301,89 @@ export default class ClassDeletedEventHandler extends ClassEventHandler {
   private async deleteInstructor(param: {
     key: {
       userId: number,
+      courseId: number,
       classId: number
     }
   }): Promise<void> {
+    const { userId, courseId, classId } = param.key;
     const env = await this.getEnv();
     let RETRIES: number = 0;
     const MAX_RETRIES: number = 3;
     while (RETRIES <= MAX_RETRIES) {
       try {
-        await this.dynamoDBDocumentClient.send(new DeleteCommand({
-          TableName: env.INSTRUCTOR_TABLE,
-          Key: param.key,
-        }));
+        const { Item: courseEntity } = await this.dynamoDBDocumentClient.send(
+          new GetCommand({
+            TableName: env.COURSE_TABLE,
+            Key: new CourseKey({ courseId }),
+          }),
+        );
+        const { Item: userEntity } = await this.dynamoDBDocumentClient.send(
+          new GetCommand({
+            TableName: env.USER_TABLE,
+            Key: new UserKey({ userId }),
+          }),
+        );
+        if (!courseEntity && !userEntity) {
+          await this.dynamoDBDocumentClient.send(new DeleteCommand({
+            TableName: env.INSTRUCTOR_TABLE,
+            Key: new InstructorKey({ userId, classId }),
+          }));
+          return;
+        }
+        await this.dynamoDBDocumentClient.send(
+          new TransactWriteCommand({
+            TransactItems: [
+              {
+                Delete: {
+                  TableName: env.INSTRUCTOR_TABLE,
+                  Key: new InstructorKey({ userId, classId }),
+                  ConditionExpression:
+                    'attribute_exists(userId) AND attribute_exists(classId)',
+                },
+              },
+              ...courseEntity ? [{
+                Update: {
+                  TableName: env.COURSE_TABLE,
+                  Key: new CourseKey({ courseId }),
+                  ConditionExpression:
+                    'attribute_exists(id) AND attribute_exists(courseId)',
+                  UpdateExpression: 'ADD #numberOfInstructors :value0',
+                  ExpressionAttributeNames: {
+                    '#numberOfInstructors': 'numberOfInstructors',
+                  },
+                  ExpressionAttributeValues: {
+                    ':value0': -1,
+                  },
+                },
+              }] : [],
+              ...userEntity ? [{
+                Update: {
+                  TableName: env.USER_TABLE,
+                  Key: new UserKey({ userId }),
+                  ConditionExpression:
+                    'attribute_exists(id) AND attribute_exists(userId)',
+                  UpdateExpression: 'ADD #numberOfManagedClasses :value0',
+                  ExpressionAttributeNames: {
+                    '#numberOfManagedClasses': 'numberOfManagedClasses',
+                  },
+                  ExpressionAttributeValues: {
+                    ':value0': -1,
+                  },
+                },
+              }] : [],
+            ],
+          }),
+        );
         return;
       } catch (exception) {
+        if (exception instanceof TransactionCanceledException) {
+          const { CancellationReasons } = exception;
+          if (!CancellationReasons) throw new InternalServerException();
+          if (
+            CancellationReasons[0].Code === DynamoDBExceptionCode.CONDITIONAL_CHECK_FAILED
+          ) return;
+        }
+
         console.info('[ClassDeletedEventHandler:deleteInstructor] Exception thrown:', exception);
         console.info(`[ClassDeletedEventHandler:deleteInstructor] Attempting to retry (${RETRIES})...`);
         RETRIES++;
