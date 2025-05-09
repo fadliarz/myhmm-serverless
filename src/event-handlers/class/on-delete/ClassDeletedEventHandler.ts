@@ -1,4 +1,10 @@
-import { DeleteCommand, DynamoDBDocumentClient, QueryCommand } from '@aws-sdk/lib-dynamodb';
+import {
+  DeleteCommand,
+  DynamoDBDocumentClient,
+  GetCommand,
+  QueryCommand,
+  TransactWriteCommand,
+} from '@aws-sdk/lib-dynamodb';
 import generateDynamoDBDocumentClient from '../../../common/generateDynamoDBDocumentClient';
 import TimerService from '../../../common/TimerService';
 import MaxRetriesException from '../../../common/MaxRetriesException';
@@ -8,6 +14,12 @@ import ClassEntity from '../../../common/entity/ClassEntity';
 import ClassAssignmentEntity from '../../../common/entity/ClassAssignmentEntity';
 import EnrollmentEntity from '../../../common/entity/EnrollmentEntity';
 import InstructorEntity from '../../../common/entity/InstructorEntity';
+import CourseKey from '../../../common/entity/CourseKey';
+import ClassAssignmentKey from '../../../common/entity/ClassAssignmentKey';
+import { TransactionCanceledException } from '@aws-sdk/client-dynamodb';
+import InternalServerException from '../../../common/exception/InternalServerException';
+import { DynamoDBExceptionCode } from '../../../common/DynamoDBExceptionCode';
+import EnrollmentKey from '../../../common/entity/EnrollmentKey';
 
 export default class ClassDeletedEventHandler extends ClassEventHandler {
   private readonly dynamoDBDocumentClient: DynamoDBDocumentClient = generateDynamoDBDocumentClient();
@@ -44,6 +56,7 @@ export default class ClassDeletedEventHandler extends ClassEventHandler {
           if (classAssignmentEntity.courseId === courseId) {
             await this.deleteClassAssignment({
               key: {
+                courseId,
                 classId,
                 assignmentId: classAssignmentEntity.assignmentId,
               },
@@ -57,28 +70,77 @@ export default class ClassDeletedEventHandler extends ClassEventHandler {
 
   private async deleteClassAssignment(param: {
     key: {
+      courseId: number,
       classId: number,
       assignmentId: number
     }
   }): Promise<void> {
+    const { courseId, classId, assignmentId } = param.key;
     const env = await this.getEnv();
     let RETRIES: number = 0;
     const MAX_RETRIES: number = 3;
     while (RETRIES <= MAX_RETRIES) {
       try {
-        await this.dynamoDBDocumentClient.send(new DeleteCommand({
-          TableName: env.CLASS_ASSIGNMENT_TABLE,
-          Key: param.key,
-        }));
+        const { Item: courseEntity } = await this.dynamoDBDocumentClient.send(
+          new GetCommand({
+            TableName: env.COURSE_TABLE,
+            Key: new CourseKey({ courseId }),
+          }),
+        );
+        if (!courseEntity) {
+          await this.dynamoDBDocumentClient.send(new DeleteCommand({
+            TableName: env.CLASS_ASSIGNMENT_TABLE,
+            Key: new ClassAssignmentKey({ classId, assignmentId }),
+          }));
+          return;
+        }
+        await this.dynamoDBDocumentClient.send(
+          new TransactWriteCommand({
+            TransactItems: [
+              {
+                Delete: {
+                  TableName: env.CLASS_ASSIGNMENT_TABLE,
+                  Key: new ClassAssignmentKey({ classId, assignmentId }),
+                  ConditionExpression:
+                    'attribute_exists(classId) AND attribute_exists(assignmentId)',
+                },
+              },
+              {
+                Update: {
+                  TableName: env.COURSE_TABLE,
+                  Key: new CourseKey({ courseId }),
+                  ConditionExpression:
+                    'attribute_exists(id) AND attribute_exists(courseId)',
+                  UpdateExpression: 'ADD #numberOfAssignments :value0',
+                  ExpressionAttributeNames: {
+                    '#numberOfAssignments': 'numberOfAssignments',
+                  },
+                  ExpressionAttributeValues: {
+                    ':value0': -1,
+                  },
+                },
+              },
+            ],
+          }),
+        );
         return;
       } catch (exception) {
-        console.info('[ClassDeletedEventHandler:removeCourseCategory] Exception thrown:', exception);
-        console.info(`[ClassDeletedEventHandler:removeCourseCategory] Attempting to retry (${RETRIES})...`);
-        RETRIES++;
-        if (RETRIES > MAX_RETRIES) {
-          throw new MaxRetriesException(exception as Error);
+        if (exception instanceof TransactionCanceledException) {
+          const { CancellationReasons } = exception;
+          if (!CancellationReasons) throw new InternalServerException();
+          if (
+            CancellationReasons[0].Code === DynamoDBExceptionCode.CONDITIONAL_CHECK_FAILED
+          ) {
+            return;
+          }
+          console.info('[ClassDeletedEventHandler:deleteClassAssignment] Exception thrown:', exception);
+          console.info(`[ClassDeletedEventHandler:deleteClassAssignment] Attempting to retry (${RETRIES})...`);
+          RETRIES++;
+          if (RETRIES > MAX_RETRIES) {
+            throw new MaxRetriesException(exception as Error);
+          }
+          await TimerService.sleepWith100MsBaseDelayExponentialBackoff(RETRIES);
         }
-        await TimerService.sleepWith100MsBaseDelayExponentialBackoff(RETRIES);
       }
     }
   }
@@ -111,6 +173,7 @@ export default class ClassDeletedEventHandler extends ClassEventHandler {
               key: {
                 userId: enrollmentEntity.userId,
                 classId,
+                courseId,
               },
             });
           }
@@ -123,20 +186,67 @@ export default class ClassDeletedEventHandler extends ClassEventHandler {
   private async deleteEnrollment(param: {
     key: {
       userId: number,
+      courseId: number,
       classId: number
     }
   }): Promise<void> {
+    const { userId, courseId, classId } = param.key;
     const env = await this.getEnv();
     let RETRIES: number = 0;
     const MAX_RETRIES: number = 3;
     while (RETRIES <= MAX_RETRIES) {
       try {
-        await this.dynamoDBDocumentClient.send(new DeleteCommand({
-          TableName: env.ENROLLMENT_TABLE,
-          Key: param.key,
-        }));
+        const { Item: courseEntity } = await this.dynamoDBDocumentClient.send(
+          new GetCommand({
+            TableName: env.COURSE_TABLE,
+            Key: new CourseKey({ courseId }),
+          }),
+        );
+        if (!courseEntity) {
+          await this.dynamoDBDocumentClient.send(new DeleteCommand({
+            TableName: env.ENROLLMENT_TABLE,
+            Key: new EnrollmentKey({ userId, classId }),
+          }));
+          return;
+        }
+        await this.dynamoDBDocumentClient.send(
+          new TransactWriteCommand({
+            TransactItems: [
+              {
+                Delete: {
+                  TableName: env.ENROLLMENT_TABLE,
+                  Key: new EnrollmentKey({ userId, classId }),
+                  ConditionExpression:
+                    'attribute_exists(userId) AND attribute_exists(classId)',
+                },
+              },
+              {
+                Update: {
+                  TableName: env.COURSE_TABLE,
+                  Key: new CourseKey({ courseId }),
+                  ConditionExpression:
+                    'attribute_exists(id) AND attribute_exists(courseId)',
+                  UpdateExpression: 'ADD #numberOfStudents :value0',
+                  ExpressionAttributeNames: {
+                    '#numberOfStudents': 'numberOfStudents',
+                  },
+                  ExpressionAttributeValues: {
+                    ':value0': -1,
+                  },
+                },
+              },
+            ],
+          }),
+        );
         return;
       } catch (exception) {
+        if (exception instanceof TransactionCanceledException) {
+          const { CancellationReasons } = exception;
+          if (!CancellationReasons) throw new InternalServerException();
+          if (
+            CancellationReasons[0].Code === DynamoDBExceptionCode.CONDITIONAL_CHECK_FAILED
+          ) return;
+        }
         console.info('[ClassDeletedEventHandler:removeCourseCategory] Exception thrown:', exception);
         console.info(`[ClassDeletedEventHandler:removeCourseCategory] Attempting to retry (${RETRIES})...`);
         RETRIES++;
