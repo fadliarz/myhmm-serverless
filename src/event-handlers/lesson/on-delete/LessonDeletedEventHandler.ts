@@ -16,6 +16,9 @@ import AttachmentEntity from '../../../common/entity/AttachmentEntity';
 import CourseKey from '../../../common/entity/CourseKey';
 import VideoKey from '../../../common/entity/VideoKey';
 import AttachmentKey from '../../../common/entity/AttachmentKey';
+import { TransactionCanceledException } from '@aws-sdk/client-dynamodb';
+import InternalServerException from '../../../common/exception/InternalServerException';
+import { DynamoDBExceptionCode } from '../../../common/DynamoDBExceptionCode';
 
 export default class LessonDeletedEventHandler extends LessonEventHandler {
   private readonly dynamoDBDocumentClient: DynamoDBDocumentClient = generateDynamoDBDocumentClient();
@@ -96,6 +99,7 @@ export default class LessonDeletedEventHandler extends LessonEventHandler {
                 Delete: {
                   TableName: env.VIDEO_TABLE,
                   Key: new VideoKey({ lessonId, videoId }),
+                  ConditionExpression: 'attribute_exists(lessonId) AND attribute_exists(videoId)',
                 },
               },
               {
@@ -125,6 +129,11 @@ export default class LessonDeletedEventHandler extends LessonEventHandler {
         );
         return;
       } catch (exception) {
+        if (exception instanceof TransactionCanceledException) {
+          const { CancellationReasons } = exception;
+          if (!CancellationReasons) throw new InternalServerException();
+          if (CancellationReasons[0].Code === DynamoDBExceptionCode.CONDITIONAL_CHECK_FAILED) return;
+        }
         console.info('[LessonDeletedEventHandler:deleteVideo] Exception thrown:', exception);
         console.info(`[LessonDeletedEventHandler:deleteVideo] Attempting to retry (${RETRIES})...`);
         RETRIES++;
