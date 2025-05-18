@@ -8,6 +8,7 @@ import MaxRetriesException from '../../../common/MaxRetriesException';
 import TimerService from '../../../common/TimerService';
 import UserEntity from '../../../common/entity/UserEntity';
 import NotificationEntity from '../../../common/entity/NotificationEntity';
+import Utils from '../../../common/Utils';
 
 export default class ScholarshipCreatedEventHandler extends ScholarshipEventHandler {
   private readonly dynamoDBDocumentClient: DynamoDBDocumentClient = generateDynamoDBDocumentClient();
@@ -42,8 +43,8 @@ export default class ScholarshipCreatedEventHandler extends ScholarshipEventHand
           notificationEntity.notificationId = scholarshipEntity.scholarshipId;
           notificationEntity.redirect = `/scholarships/${scholarshipEntity.scholarshipId}`;
           notificationEntity.isSeen = false;
-          notificationEntity.title = scholarshipEntity.title;
-          notificationEntity.description = scholarshipEntity.description;
+          notificationEntity.title = `New Scholarship: ${scholarshipEntity.title}`;
+          notificationEntity.description = `A new scholarship has been added — apply now before the deadline on ${Utils.dateToWIBString(scholarshipEntity.deadline)} and take the next step toward your educational goals!`;
           await this.createNotification({
             notificationEntity,
           });
